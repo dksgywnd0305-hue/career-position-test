@@ -21,5 +21,8 @@ window.CONFIG = {
   },
 
   // 공용 태블릿(?kiosk=1)에서 결과 화면 방치 시 처음으로 돌아가는 시간(초)
-  kioskResetSec: 90
+  kioskResetSec: 90,
+
+  // 현장 상담 모드(?mode=consult)에서 아무도 안 만질 때 처음으로 돌아가는 시간(초). 상담 중 결과를 같이 보니 길게.
+  consultResetSec: 900
 };

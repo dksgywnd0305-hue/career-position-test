@@ -165,8 +165,9 @@
   const E = window.ENGINE, C = window.CONFIG;
   const $app = document.getElementById('app');
   const params = new URLSearchParams(location.search);
-  const SRC = (params.get('src') || 'direct').slice(0, 40);
-  const KIOSK = params.get('kiosk') === '1';
+  const CONSULT = params.get('mode') === 'consult';            // 현장 상담 모드 (상담 초반 태블릿 작성용)
+  const SRC = (params.get('src') || (CONSULT ? '현장상담' : 'direct')).slice(0, 40);
+  const KIOSK = params.get('kiosk') === '1' || CONSULT;
   const TEST_MODE = !C.apiUrl;
 
   let S, idleTimer = null;
@@ -175,7 +176,7 @@
       sid: Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
       step: 0, startedAt: null, shown: 0,
       order: {},                      // 문항별 좌우 섞기
-      ans: { age: null, track: null, curious: null, picks: {}, q10: null, exp: null, goal: null, time: null, times: {} },
+      ans: { age: null, track: null, curious: [], picks: {}, q10: null, exp: null, goal: null, time: null, times: {} },
       result: null, logged: { start: false, complete: false }
     };
   }
@@ -215,7 +216,7 @@
   function armIdle(sec) {
     clearTimeout(idleTimer);
     if (!KIOSK) return;
-    idleTimer = setTimeout(() => { S = fresh(); renderIntro(); }, (sec || C.kioskResetSec) * 1000);
+    idleTimer = setTimeout(() => { S = fresh(); renderIntro(); }, (sec || (CONSULT ? (C.consultResetSec || 900) : C.kioskResetSec)) * 1000);
   }
   ['pointerdown', 'keydown', 'scroll'].forEach(ev => window.addEventListener(ev, () => { if (KIOSK && S && (S.step > 0 || S.result)) armIdle(); }, { passive: true }));
 
@@ -228,11 +229,13 @@
       ${brandHtml()}
       <section class="intro">
         <h1>게임·웹툰 제작,<br>나는 <em>어떤 포지션</em>일까?</h1>
-        <p class="lead">실제 작업 장면 중 더 해 보고 싶은 쪽을 고르면, 내 작업 스타일과 지금 할 수 있는 첫 준비 과제를 알려 드려요.</p>
+        ${CONSULT
+          ? '<p class="lead">상담 시작 전에 2분만 답해 주세요. 실제 작업 장면 중 더 해 보고 싶은 쪽을 고르면 되고, 나온 결과를 보면서 상담 선생님과 이야기할 거예요.</p>'
+          : '<p class="lead">실제 작업 장면 중 더 해 보고 싶은 쪽을 고르면, 내 작업 스타일과 지금 할 수 있는 첫 준비 과제를 알려 드려요.</p>'}
         <div class="chips">${chips}</div>
-        <div class="meta"><span>⏱ 약 <b>2분</b></span><span>👆 <b>15번</b> 터치</span><span>🔓 연락처 없이 결과 확인</span></div>
+        <div class="meta"><span>⏱ 약 <b>2분</b></span><span>👆 <b>15번</b> 터치</span>${CONSULT ? '<span>✏️ 정답 없음</span>' : '<span>🔓 연락처 없이 결과 확인</span>'}</div>
         <button class="btn btn-primary" id="go">시작하기</button>
-        <p class="fine">이 테스트는 게임·웹툰·웹소설 분야의 관심 활동과 준비 상태를 정리하는 자체 진로탐색 도구예요. 표준화된 심리검사나 능력·합격 가능성 판정이 아니며, 결과는 상담과 체험의 참고자료로 쓰입니다. 응답은 이름·연락처 없이 익명 통계로만 저장돼요.</p>
+        <p class="fine">이 테스트는 게임·웹툰·웹소설 분야의 관심 활동과 준비 상태를 정리하는 자체 진로탐색 도구예요. 표준화된 심리검사나 능력·합격 가능성 판정이 아니며, 결과는 상담과 체험의 참고자료로 쓰입니다.${CONSULT ? ' 실력을 평가하는 시험이 아니니 편하게 골라 주세요.' : ' 응답은 이름·연락처 없이 익명 통계로만 저장돼요.'}</p>
       </section>`;
     document.getElementById('go').onclick = () => { S.startedAt = Date.now(); S.step = 1; logEvent('start'); renderStep(); };
   }
@@ -250,8 +253,11 @@
       section = '시작 질문'; title = '지금 나에게 해당하는 것은?'; hint = '나이에 맞춰 결과와 다음 단계를 안내해 드려요.';
       body = optList(E.AGE.map(o => ({ v: o.v, label: o.label })), a.age, 'small');
     } else if (st.kind === 'curious') {
-      section = '시작 질문'; title = '오늘 가장 알고 싶은 건 뭔가요?'; hint = '결과 화면에서 이 질문에 맞춰 정리해 드려요.';
-      body = optList(E.CURIOUS[a.track || 'teen'], a.curious, 'small');
+      section = '시작 질문'; title = '오늘 알고 싶은 걸 모두 골라 주세요';
+      hint = CONSULT ? '여러 개 골라도 돼요. 상담 선생님이 고른 것부터 이야기해 드려요.' : '여러 개 골라도 돼요. 결과 화면에서 이 질문에 맞춰 정리해 드려요.';
+      const opts = E.CURIOUS[a.track || 'teen'];
+      body = `<div class="opts small multi">${opts.map((o, i) => `<button class="opt${a.curious.includes(o.v) ? ' sel' : ''}" data-v="${esc(o.v)}" aria-pressed="${a.curious.includes(o.v)}"><span class="k">${a.curious.includes(o.v) ? '✓' : String.fromCharCode(65 + i)}</span><span>${esc(o.label)}</span></button>`).join('')}</div>
+        <button class="btn btn-primary" id="next" style="margin-top:18px" ${a.curious.length ? '' : 'disabled'}>다음</button>`;
     } else if (st.kind === 'pair') {
       const p = st.p;
       if (!S.order[p.id]) S.order[p.id] = Math.random() < 0.5 ? ['a', 'b'] : ['b', 'a'];
@@ -288,6 +294,19 @@
       </div>`;
     S.shown = performance.now();
     document.getElementById('back').onclick = () => { if (S.step > 1) { S.step--; renderStep(); } };
+    if (st.kind === 'curious') {
+      const next = document.getElementById('next');
+      $app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+        const v = btn.dataset.v, list = S.ans.curious, i = list.indexOf(v);
+        if (i >= 0) list.splice(i, 1); else list.push(v);
+        const on = i < 0;
+        btn.classList.toggle('sel', on); btn.setAttribute('aria-pressed', on);
+        btn.querySelector('.k').textContent = on ? '✓' : String.fromCharCode(65 + [...btn.parentNode.children].indexOf(btn));
+        next.disabled = !list.length;
+      });
+      next.onclick = () => { S.step++; renderStep(); };
+      return;
+    }
     $app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => choose(st, btn.dataset.v, btn));
   }
   function optBtn(v, label, sel, k) {
@@ -304,10 +323,9 @@
     const a = S.ans, ms = Math.round(performance.now() - S.shown);
     if (st.kind === 'age') {
       const o = E.AGE.find(x => x.v === raw);
-      if (a.track && a.track !== o.track) { a.curious = null; a.goal = null; }
+      if (a.track && a.track !== o.track) { a.curious = []; a.goal = null; }
       a.age = o.v; a.track = o.track;
-    } else if (st.kind === 'curious') a.curious = raw;
-    else if (st.kind === 'pair') { a.picks[st.p.id] = raw; a.times[st.p.id] = ms; }
+    } else if (st.kind === 'pair') { a.picks[st.p.id] = raw; a.times[st.p.id] = ms; }
     else if (st.kind === 'q10') { a.q10 = raw; a.times[10] = ms; }
     else if (st.kind === 'state') { a[st.q.key] = st.q.key === 'goal' ? raw : Number(raw); }
     $app.querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', b === btn));
@@ -342,7 +360,7 @@
     const framing = a.track === 'adult'
       ? '관심 직무와 지금의 준비 상태는 따로 봐야 해요. 관심이 높아도 준비 단계에 따라 첫 과제가 달라집니다.'
       : '지금은 직업을 정하기보다, 먼저 해 볼 활동을 고르는 단계예요. 직접 해 보면 결과가 더 선명해져요.';
-    const curiousLabel = (E.CURIOUS[a.track].find(o => o.v === a.curious) || {}).label || '';
+    const curious = curiousLabels(a);
     const links = [r.top1, r.top2].filter(d => C.links && C.links[d])
       .map(d => `<a class="box linkbox" href="${esc(C.links[d])}" target="_blank" rel="noopener">${D[d].name} 작업 과정 미리 체험하기<span>열기 →</span></a>`).join('');
     const isKid = a.age === 'u14';
@@ -380,7 +398,7 @@
             <div><dt>관심 분야</dt><dd>${d1.name} 우선, ${d2.name} 함께 탐색</dd></div>
             <div><dt>경험</dt><dd>${esc(expLabel)}</dd></div>
             <div><dt>목표</dt><dd>${esc(goalLabel)} · 주 ${esc(timeLabel)}</dd></div>
-            <div><dt>알고 싶은 것</dt><dd>${esc(curiousLabel)}</dd></div>
+            <div><dt>알고 싶은 것</dt><dd>${curious.map(esc).join('<br>')}</dd></div>
           </dl>
         </div>
       </section>
@@ -404,21 +422,28 @@
       </section>
 
       <section class="cta">
-        <h3>여기서부터는 상담에서 확인해요</h3>
+        ${CONSULT ? `<h3>이제 상담 선생님과 이야기해요</h3>
+        <p>${d1.name}와(과) ${d2.name} 중 어느 쪽이 더 맞는지는 이 결과만으로 정할 수 없어요. 결과를 본 <b>내 생각</b>을 먼저 적어 주면, 선생님이 그 이야기부터 시작해요.</p>
+        <ul>
+          <li>더 와닿은 분야 고르기</li>
+          <li>생각과 달랐던 부분 (선택)</li>
+          <li>꼭 묻고 싶은 질문 한 가지 (선택)</li>
+        </ul>
+        <button class="btn btn-primary" id="apply">내 생각 적고 선생님께 보내기</button>` : `<h3>여기서부터는 상담에서 확인해요</h3>
         <p>${d1.name}와(과) ${d2.name} 중 어느 쪽이 더 맞는지는 이 결과만으로 정할 수 없어요. 상담에서는 결과를 바탕으로 <b>1장짜리 해석지</b>를 함께 만들어 드려요.</p>
         <ul>
           <li>${d1.name} · ${d2.name}의 실제 작업 비교</li>
           <li>지금 ${lv.name}에 맞는 준비 경로</li>
           <li>4주 동안 해 볼 첫 과제 계획</li>
-          ${curiousLabel ? `<li>‘${esc(curiousLabel)}’에 대한 답</li>` : ''}
+          ${curious.map(c => `<li>‘${esc(c)}’에 대한 답</li>`).join('')}
         </ul>
-        ${isKid ? kidBlock() : '<button class="btn btn-primary" id="apply">결과 해석 상담 신청하기</button>'}
+        ${isKid ? kidBlock() : '<button class="btn btn-primary" id="apply">결과 해석 상담 신청하기</button>'}`}
       </section>
 
       <div class="row2">
         ${KIOSK ? '' : '<button class="btn btn-ghost" id="saveimg">결과 이미지 저장</button><button class="btn btn-ghost" id="share">친구에게 공유</button>'}
       </div>
-      <button class="btn btn-ghost" id="restart" style="margin-top:10px">처음부터 다시 하기</button>
+      <button class="btn btn-ghost" id="restart" style="margin-top:10px">${CONSULT ? '상담 끝 · 다음 학생 시작' : '처음부터 다시 하기'}</button>
 
       <footer class="disc">본 도구는 게임·웹툰·웹소설 분야의 관심 활동과 준비 상태를 정리하기 위한 자체 진로탐색 도구입니다. 표준화된 심리검사나 능력·취업 가능성 판정을 대신하지 않으며, 결과는 상담과 체험을 위한 참고자료로 활용됩니다.</footer>`;
 
@@ -435,26 +460,47 @@
       ${C.phone ? `<a class="btn btn-primary" href="tel:${esc(C.phone.replace(/[^0-9+]/g, ''))}">보호자와 전화 상담 (${esc(C.phone)})</a>` : '<p style="margin:0">학원에 방문하시거나 전화로 문의해 주세요.</p>'}</div>`;
   }
 
-  // ================= 화면: 상담 신청 =================
+  // ================= 화면: 상담 신청 (온라인) / 선생님께 보내기 (현장 상담) =================
   function renderApply() {
     window.scrollTo(0, 0);
-    const D = E.DOMAINS, r = S.result;
+    const D = E.DOMAINS, r = S.result, a = S.ans;
+    const kidOnSite = CONSULT && a.age === 'u14';
     const feel = [
       { v: 'top1', label: D[r.top1].name }, { v: 'top2', label: D[r.top2].name },
       { v: 'both', label: '둘 다 비슷해요' }, { v: 'none', label: '둘 다 아닌 것 같아요' }
     ];
     const times = ['평일 오후', '평일 저녁', '주말', '언제든 괜찮아요'];
-    $app.innerHTML = `
-      ${brandHtml()}
-      <div class="qtop"><button class="back" id="back" aria-label="결과로 돌아가기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div style="font-weight:700">결과 해석 상담 신청</div></div>
-      <p style="color:var(--sub);margin:0 0 20px;font-size:15px">상담 선생님이 결과를 미리 보고, 질문을 준비해서 연락드려요.</p>
-      <form id="f" novalidate>
+    const segLabel = t => `<span class="l" style="display:block;font-size:14px;font-weight:600;margin-bottom:7px">${t}</span>`;
+    const back = `<button class="back" id="back" aria-label="결과로 돌아가기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>`;
+
+    const thoughts = `
+        <div class="field">${segLabel('결과 중 더 와닿은 분야는?')}<div class="seg" data-k="feel">${feel.map(o => `<button type="button" data-v="${o.v}">${o.label}</button>`).join('')}</div></div>
+        ${CONSULT ? '<div class="field"><label class="l" for="df">생각과 달랐던 부분이 있다면? <small>(선택)</small></label><textarea id="df" maxlength="100" placeholder="예: 3D가 낮게 나와서 의외였어요"></textarea></div>' : ''}
+        <div class="field"><label class="l" for="qq">상담에서 꼭 묻고 싶은 질문 한 가지 <small>(선택)</small></label><textarea id="qq" maxlength="100" placeholder="예: 그림 실력이 부족해도 시작할 수 있나요?"></textarea></div>`;
+
+    const contact = CONSULT ? `
+        <div class="field"><label class="l" for="nm">이름</label><input type="text" id="nm" maxlength="20" autocomplete="name" required></div>
+        <div class="field"><label class="l" for="ph">연락처 <small>(선택 — 상담 후 자료를 받고 싶다면)</small></label><input type="tel" id="ph" maxlength="13" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000"></div>` : `
         <div class="field"><label class="l" for="nm">이름</label><input type="text" id="nm" maxlength="20" autocomplete="name" required></div>
         <div class="field"><label class="l" for="ph">연락처</label><input type="tel" id="ph" maxlength="13" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000" required></div>
-        <div class="field"><span class="l" style="display:block;font-size:14px;font-weight:600;margin-bottom:7px">연락받기 편한 시간</span><div class="seg" data-k="when">${times.map(t => `<button type="button" data-v="${t}">${t}</button>`).join('')}</div></div>
-        <div class="field"><span class="l" style="display:block;font-size:14px;font-weight:600;margin-bottom:7px">결과 중 더 와닿은 분야는?</span><div class="seg" data-k="feel">${feel.map(o => `<button type="button" data-v="${o.v}">${o.label}</button>`).join('')}</div></div>
-        <div class="field"><label class="l" for="qq">상담에서 꼭 묻고 싶은 질문 <small>(선택)</small></label><textarea id="qq" maxlength="100" placeholder="예: 그림 실력이 부족해도 시작할 수 있나요?"></textarea></div>
-        <div class="hp" aria-hidden="true"><label>회사<input type="text" id="company" tabindex="-1" autocomplete="off"></label></div>
+        <div class="field">${segLabel('연락받기 편한 시간')}<div class="seg" data-k="when">${times.map(t => `<button type="button" data-v="${t}">${t}</button>`).join('')}</div></div>`;
+
+    const consent = CONSULT ? `
+        <div class="consent">
+          <label><input type="checkbox" id="c1"> [필수] 상담 진행을 위해 이름과 응답 내용을 저장하는 데 동의합니다</label>
+          <details><summary>자세히 보기</summary>
+            <table>
+              <tr><th>수집 항목</th><td>이름, 테스트 응답 내용, 적은 생각과 질문, 연락처(입력한 경우)</td></tr>
+              <tr><th>이용 목적</th><td>현장 진로 상담 진행 및 상담 기록</td></tr>
+              <tr><th>보유 기간</th><td>${esc(C.retention)}</td></tr>
+              <tr><th>거부 권리</th><td>동의하지 않을 수 있으며, 이 경우 저장하지 않고 화면의 결과만 보며 상담합니다.</td></tr>
+            </table>
+          </details>
+        </div>
+        ${kidOnSite ? `<div class="consent" style="border:1px solid var(--accent)">
+          <label><input type="checkbox" id="cg"> [필수 · 상담 선생님 확인] 보호자가 함께 있으며, 위 내용에 동의했습니다</label>
+          <p style="margin:8px 0 0;color:var(--sub);font-size:13px">만 14세 미만은 보호자 동의가 필요해요. 상담 선생님이 보호자께 직접 확인한 뒤 체크해 주세요.</p>
+        </div>` : ''}` : `
         <div class="consent">
           <label><input type="checkbox" id="c1"> [필수] 상담 연락을 위한 개인정보 수집·이용에 동의합니다</label>
           <details><summary>자세히 보기</summary>
@@ -465,14 +511,27 @@
               <tr><th>거부 권리</th><td>동의하지 않을 수 있으며, 이 경우 상담 신청만 제한되고 결과 확인은 그대로 가능합니다.</td></tr>
             </table>
           </details>
-        </div>
+        </div>`;
+
+    const marketing = `
         <div class="consent">
-          <label><input type="checkbox" id="c2"> [선택] 설명회·체험 수업 등 소식을 문자로 받겠습니다</label>
-          <details><summary>자세히 보기</summary><p style="margin:8px 0 0">연락처로 행사·과정 안내 문자를 보냅니다. 동의하지 않아도 상담 신청에는 영향이 없으며, 언제든 수신을 거부할 수 있습니다.</p></details>
-        </div>
+          <label><input type="checkbox" id="c2"> [선택] 설명회·체험 수업 등 소식을 문자로 받겠습니다${CONSULT ? ' (연락처를 적은 경우)' : ''}</label>
+          <details><summary>자세히 보기</summary><p style="margin:8px 0 0">연락처로 행사·과정 안내 문자를 보냅니다. 동의하지 않아도 상담에는 영향이 없으며, 언제든 수신을 거부할 수 있습니다.</p></details>
+        </div>`;
+
+    $app.innerHTML = `
+      ${brandHtml()}
+      <div class="qtop">${back}<div style="font-weight:700">${CONSULT ? '내 생각 적고 선생님께 보내기' : '결과 해석 상담 신청'}</div></div>
+      <p style="color:var(--sub);margin:0 0 20px;font-size:15px">${CONSULT ? '정답은 없어요. 선생님이 설명하기 전에, 결과를 본 내 생각부터 들려주세요.' : '상담 선생님이 결과를 미리 보고, 질문을 준비해서 연락드려요.'}</p>
+      <form id="f" novalidate>
+        ${CONSULT ? thoughts + contact : contact + thoughts}
+        <div class="hp" aria-hidden="true"><label>회사<input type="text" id="company" tabindex="-1" autocomplete="off"></label></div>
+        ${consent}
+        ${marketing}
         <div class="err" id="err"></div>
-        <button class="btn btn-primary" type="submit" id="sub">상담 신청하기</button>
+        <button class="btn btn-primary" type="submit" id="sub">${CONSULT ? '선생님께 보내기' : '상담 신청하기'}</button>
       </form>`;
+
     const sel = {};
     $app.querySelectorAll('.seg').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
       g.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); sel[g.dataset.k] = b.dataset.v;
@@ -483,23 +542,29 @@
       ph.value = n.length < 4 ? n : n.length < 8 ? `${n.slice(0, 3)}-${n.slice(3)}` : `${n.slice(0, 3)}-${n.slice(3, n.length - 4)}-${n.slice(-4)}`;
     });
     document.getElementById('back').onclick = renderResult;
+    const label = CONSULT ? '선생님께 보내기' : '상담 신청하기';
     document.getElementById('f').onsubmit = async ev => {
       ev.preventDefault();
       const err = document.getElementById('err');
       const name = document.getElementById('nm').value.trim();
       const phone = ph.value.replace(/\D/g, '');
+      const phoneOk = /^01[016789]\d{7,8}$/.test(phone);
+      if (CONSULT && !sel.feel) return err.textContent = '더 와닿은 분야를 골라 주세요.';
       if (name.length < 2) return err.textContent = '이름을 입력해 주세요.';
-      if (!/^01[016789]\d{7,8}$/.test(phone)) return err.textContent = '휴대폰 번호를 정확히 입력해 주세요.';
-      if (!document.getElementById('c1').checked) return err.textContent = '상담 연락을 위해 필수 동의가 필요해요.';
+      if (CONSULT ? (phone && !phoneOk) : !phoneOk) return err.textContent = '휴대폰 번호를 정확히 입력해 주세요.';
+      if (!document.getElementById('c1').checked) return err.textContent = CONSULT ? '저장하려면 필수 동의가 필요해요. 동의하지 않으면 화면을 선생님께 바로 보여 주세요.' : '상담 연락을 위해 필수 동의가 필요해요.';
+      if (kidOnSite && !document.getElementById('cg').checked) return err.textContent = '만 14세 미만은 상담 선생님의 보호자 동의 확인이 필요해요.';
       err.textContent = '';
       const btn = document.getElementById('sub'); btn.disabled = true; btn.textContent = '보내는 중…';
-      const r = S.result, a = S.ans;
+      const df = document.getElementById('df');
       try {
         const res = await api({
-          action: 'apply', sid: S.sid, src: SRC, company: document.getElementById('company').value,
-          name, phone, when: sel.when || '', feel: sel.feel || '', question: document.getElementById('qq').value.trim(),
-          marketing: document.getElementById('c2').checked,
-          age: a.age, track: a.track, curious: a.curious,
+          action: 'apply', mode: CONSULT ? 'consult' : 'online', guardian: kidOnSite ? true : false,
+          sid: S.sid, src: SRC, company: document.getElementById('company').value,
+          name, phone: phoneOk ? phone : '', when: sel.when || '', feel: sel.feel || '',
+          question: document.getElementById('qq').value.trim(), differ: df ? df.value.trim() : '',
+          marketing: phoneOk && document.getElementById('c2').checked,
+          age: a.age, track: a.track, curious: a.curious.join(','), curiousLabel: curiousLabels(a).join(', '),
           top1: r.top1, top2: r.top2, level: r.level, flags: r.flags.join(','),
           scores: r.scores,
           detail: { ans: a, result: { scores: r.scores, rank: r.rank, flags: r.flags, level: r.level, avgMs: r.avgMs, grindQ: r.grindQ } }
@@ -507,26 +572,35 @@
         if (!res || !res.ok) throw new Error((res && res.error) || '저장 실패');
         renderDone(res.test);
       } catch (e) {
-        btn.disabled = false; btn.textContent = '상담 신청하기';
-        err.textContent = '전송에 실패했어요. 잠시 후 다시 시도하거나 학원으로 연락해 주세요.' + (C.phone ? ` (${C.phone})` : '');
+        btn.disabled = false; btn.textContent = label;
+        err.textContent = CONSULT ? '전송에 실패했어요. 화면을 선생님께 바로 보여 주세요.' : '전송에 실패했어요. 잠시 후 다시 시도하거나 학원으로 연락해 주세요.' + (C.phone ? ` (${C.phone})` : '');
       }
     };
   }
 
+  function curiousLabels(a) {
+    const list = E.CURIOUS[a.track || 'teen'];
+    return (a.curious || []).map(v => (list.find(o => o.v === v) || {}).label).filter(Boolean);
+  }
+
   function renderDone(isTest) {
     window.scrollTo(0, 0);
+    const testNote = isTest ? '<br><small style="color:var(--accent)">(테스트 모드라 실제로 저장되지는 않았습니다)</small>' : '';
     $app.innerHTML = `
       ${brandHtml()}
       <section class="done">
         <div class="ic"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0E1020" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
-        <h2>상담 신청이 접수됐어요</h2>
-        <p>상담 선생님이 결과를 미리 확인하고 연락드릴게요.<br>그 전에 <b>첫 실행 과제</b>를 해 보면 상담이 훨씬 구체적이 돼요.${isTest ? '<br><small style="color:var(--accent)">(테스트 모드라 실제로 저장되지는 않았습니다)</small>' : ''}</p>
-        <button class="btn btn-ghost" id="toResult">내 결과 다시 보기</button>
-        <button class="btn btn-ghost" id="restart">처음으로</button>
+        ${CONSULT
+          ? `<h2>선생님께 전달됐어요</h2><p>이제 결과를 같이 보면서 이야기해요.<br>태블릿을 상담 선생님께 건네 주세요.${testNote}</p>
+             <button class="btn btn-primary" id="toResult">결과 화면 다시 열기</button>
+             <button class="btn btn-ghost" id="restart">상담 끝 · 다음 학생 시작</button>`
+          : `<h2>상담 신청이 접수됐어요</h2><p>상담 선생님이 결과를 미리 확인하고 연락드릴게요.<br>그 전에 <b>첫 실행 과제</b>를 해 보면 상담이 훨씬 구체적이 돼요.${testNote}</p>
+             <button class="btn btn-ghost" id="toResult">내 결과 다시 보기</button>
+             <button class="btn btn-ghost" id="restart">처음으로</button>`}
       </section>`;
     document.getElementById('toResult').onclick = renderResult;
     document.getElementById('restart').onclick = () => { S = fresh(); renderIntro(); };
-    armIdle(KIOSK ? 20 : 0);
+    armIdle(CONSULT ? 0 : (KIOSK ? 20 : 0));
   }
 
   // ================= 공유 =================

@@ -15,8 +15,8 @@ const SH_SUM = '유입요약';
 const LOG_HEAD = ['일시', '세션ID', '이벤트', '유입경로', '대상', '나이구분', '1위', '2위', '준비도', '패턴', '소요초', '응답요약'];
 const APPLY_HEAD = ['신청일시', '신청ID', '세션ID', '이름', '연락처', '연락희망시간', '나이구분', '대상', '유입경로',
   '알고싶은것', '상담질문', '와닿은결과', '1위', '2위', '점수', '준비도', '패턴', '응답상세(JSON)', '마케팅동의',
-  '진행상태', '담당자', '메모'];
-const STATUS = ['신규', '연락완료', '상담예약', '상담완료', '체험참여', '등록', '보류', '부재'];
+  '진행상태', '담당자', '메모', '모드', '보호자확인', '달랐던점'];
+const STATUS = ['신규', '상담중', '연락완료', '상담예약', '상담완료', '체험참여', '등록', '보류', '부재'];
 
 const DOMAIN_NAME = { plan: '게임기획', dev: '프로그래밍', art: '원화', model: '3D', toon: '웹툰', novel: '웹소설' };
 const LEVEL_NAME = { explore: '탐색', basic: '기초', pro: '실전' };
@@ -112,20 +112,23 @@ function appendLog(d) {
 
 function appendApply(d) {
   if (d.company) return { ok: true };                               // 봇 차단용 숨은 칸이 채워짐 → 조용히 무시
-  if (d.age === 'u14') return { ok: false, error: '만 14세 미만은 보호자 상담으로 안내' };
+  const consult = d.mode === 'consult';                             // 현장 상담 모드: 연락처 선택, 14세 미만은 상담자가 보호자 동의 확인
+  if (d.age === 'u14' && !(consult && d.guardian === true)) return { ok: false, error: '만 14세 미만은 보호자 동의 필요' };
   const name = clean(d.name, 20);
   const phone = String(d.phone || '').replace(/\D/g, '');
-  if (name.length < 2 || !/^01[016789]\d{7,8}$/.test(phone)) return { ok: false, error: '입력값 확인' };
+  const phoneOk = /^01[016789]\d{7,8}$/.test(phone);
+  if (name.length < 2 || (consult ? (phone && !phoneOk) : !phoneOk)) return { ok: false, error: '입력값 확인' };
 
   const sh = SpreadsheetApp.getActive().getSheetByName(SH_APPLY);
   const id = 'A' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyMMdd') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
-  const phoneFmt = phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+  const phoneFmt = phoneOk ? phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3') : '';
   const feelMap = { top1: DOMAIN_NAME[d.top1], top2: DOMAIN_NAME[d.top2], both: '둘 다 비슷', none: '둘 다 아님' };
   const scoreTxt = Object.keys(DOMAIN_NAME).map(k => DOMAIN_NAME[k] + ' ' + ((d.scores || {})[k] || 0)).join(' / ');
   sh.appendRow([new Date(), id, clean(d.sid, 20), name, phoneFmt, clean(d.when, 20), clean(d.age, 10), clean(d.track, 10),
-    clean(d.src, 40), clean(d.curious, 20), clean(d.question, 100), feelMap[d.feel] || '',
+    clean(d.src, 40), clean(d.curiousLabel || d.curious, 200), clean(d.question, 100), feelMap[d.feel] || '',
     DOMAIN_NAME[d.top1] || '', DOMAIN_NAME[d.top2] || '', scoreTxt, LEVEL_NAME[d.level] || '', clean(d.flags, 80),
-    JSON.stringify(d.detail || {}).slice(0, 5000), d.marketing ? 'Y' : 'N', '신규', '', '']);
+    JSON.stringify(d.detail || {}).slice(0, 5000), (phoneOk && d.marketing) ? 'Y' : 'N', consult ? '상담중' : '신규', '', '',
+    consult ? '현장상담' : '온라인', d.guardian === true ? '상담자 확인' : '', clean(d.differ, 100)]);
   return { ok: true, id: id };
 }
 
@@ -153,7 +156,8 @@ function listApply(limit) {
       id: r[col('신청ID')], name: r[col('이름')], phone: r[col('연락처')], when: r[col('연락희망시간')],
       age: r[col('나이구분')], track: r[col('대상')], src: r[col('유입경로')], curious: r[col('알고싶은것')],
       question: r[col('상담질문')], feel: r[col('와닿은결과')], marketing: r[col('마케팅동의')],
-      status: r[col('진행상태')], owner: r[col('담당자')], memo: r[col('메모')], detail: detail
+      status: r[col('진행상태')], owner: r[col('담당자')], memo: r[col('메모')],
+      mode: r[col('모드')] || '온라인', guardian: r[col('보호자확인')], differ: r[col('달랐던점')], detail: detail
     };
   });
 }

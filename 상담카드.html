@@ -122,7 +122,7 @@
     root.innerHTML = header(`<button class="btn noprint" id="reload">새로고침</button><button class="btn primary noprint" id="print">카드 인쇄</button>`) + `
       <div class="layout">
         <aside class="list">
-          <div class="filters"><input id="q" placeholder="이름·연락처 검색"><select id="fs"><option value="">전체 상태</option>${['신규','연락완료','상담예약','상담완료','체험참여','등록','보류','부재'].map(s => `<option>${s}</option>`).join('')}</select></div>
+          <div class="filters"><input id="q" placeholder="이름·연락처 검색"><select id="fs"><option value="">전체 상태</option>${['신규','상담중','연락완료','상담예약','상담완료','체험참여','등록','보류','부재'].map(s => `<option>${s}</option>`).join('')}</select></div>
           <div class="items" id="items"></div>
         </aside>
         <section id="card"><div class="sheet empty">왼쪽 목록에서 신청자를 고르세요.</div></section>
@@ -143,7 +143,7 @@
     box.innerHTML = list.map(r => {
       const res = r.detail && r.detail.ans ? E.compute(r.detail.ans) : null;
       return `<button class="item${cur === r.id ? ' on' : ''}" data-id="${esc(r.id)}">
-        <div class="r1"><span>${esc(r.name)}</span><span class="st${r.status === '신규' ? ' new' : ''}">${esc(r.status)}</span></div>
+        <div class="r1"><span>${esc(r.name)}</span><span class="st${r.status === '신규' || r.status === '상담중' ? ' new' : ''}">${r.mode === '현장상담' ? '현장 · ' : ''}${esc(r.status)}</span></div>
         <div class="r2">${esc(r.at)} · ${esc(r.src)} · ${res ? D[res.top1].name + '/' + D[res.top2].name : '-'}</div></button>`;
     }).join('');
     box.querySelectorAll('.item').forEach(b => b.onclick = () => showCard(b.dataset.id));
@@ -160,7 +160,7 @@
     const d1 = D[r.top1], d2 = D[r.top2];
     const track = a.track || 'teen';
     const ageLabel = (E.AGE.find(x => x.v === a.age) || {}).label || '';
-    const curious = (E.CURIOUS[track].find(x => x.v === a.curious) || {}).label || '-';
+    const curious = [].concat(a.curious || []).map(v => (E.CURIOUS[track].find(x => x.v === v) || {}).label).filter(Boolean).join(', ') || '-';
     const exp = (E.STATE_QS[0].options.find(o => o.v === a.exp) || {}).label || '-';
     const goal = (E.STATE_QS[1].options[track].find(o => o.v === a.goal) || {}).label || '-';
     const time = (E.STATE_QS[2].options.find(o => o.v === a.time) || {}).label || '-';
@@ -179,7 +179,7 @@
     box.innerHTML = `<article class="sheet">
       <div class="ch">
         <div><h2>${esc(row.name)}<small>${esc(row.phone)}</small></h2>
-          <div style="color:var(--sub);margin-top:4px">${esc(ageLabel)} · 연락 희망 ${esc(row.when || '-')} · 문자수신 ${row.marketing === 'Y' ? '동의' : '미동의'}</div></div>
+          <div style="color:var(--sub);margin-top:4px">${row.mode === '현장상담' ? '<b style="color:var(--accent)">현장 상담</b> · ' : ''}${esc(ageLabel)}${row.guardian ? ' (보호자 동의: ' + esc(row.guardian) + ')' : ''}${row.mode === '현장상담' ? '' : ' · 연락 희망 ' + esc(row.when || '-')} · 문자수신 ${row.marketing === 'Y' ? '동의' : '미동의'}</div></div>
         <div class="meta">${esc(row.id)}<br>${esc(row.at)}<br>유입: <b>${esc(row.src)}</b></div>
       </div>
 
@@ -187,6 +187,7 @@
         <h3>본인이 정한 상담 의제</h3>
         <div>알고 싶은 것: <b>${esc(curious)}</b> · 더 와닿은 결과: <b>${esc(row.feel || '-')}</b></div>
         <div class="q">${row.question ? '“' + esc(row.question) + '”' : '<span style="color:var(--dim);font-weight:500">직접 쓴 질문 없음</span>'}</div>
+        ${row.differ ? '<div style="margin-top:6px">생각과 달랐던 부분: <b>“' + esc(row.differ) + '”</b></div>' : ''}
       </div>
 
       <div class="grid2">
@@ -230,10 +231,10 @@
     const mk = (name, src, age, track, picks, q10, exp, goal, time, fast, question, feel) => {
       const times = {}; for (let i = 1; i <= 10; i++) times[i] = fast ? 700 + i * 40 : 2400 + (i * 517) % 3000;
       return { id: 'SAMPLE-' + name, at: '2026-11-26 14:0' + name.length, name, phone: '010-0000-000' + name.length, when: '평일 저녁', src, age, track,
-        question, feel, marketing: 'N', status: '신규', detail: { ans: { age, track, curious: 'fit', picks, q10, exp, goal, time, times } } };
+        question, feel, marketing: 'N', status: src === '현장상담' ? '상담중' : '신규', mode: src === '현장상담' ? '현장상담' : '온라인', differ: src === '현장상담' ? '3D가 낮게 나와서 의외였어요' : '', detail: { ans: { age, track, curious: ['fit', 'portfolio'], picks, q10, exp, goal, time, times } } };
     };
     return [
-      mk('예시학생', '인스타', 'teen', 'teen', { 1: 'art', 2: 'toon', 3: 'novel', 4: 'plan', 5: 'model', 6: 'art', 7: 'art', 8: 'dev', 9: 'novel' }, 'toon', 0, 'soon', 1, false, '그림 실력이 부족해도 입시 준비가 가능한가요?', '둘 다 비슷'),
+      mk('예시학생', '현장상담', 'teen', 'teen', { 1: 'art', 2: 'toon', 3: 'novel', 4: 'plan', 5: 'model', 6: 'art', 7: 'art', 8: 'dev', 9: 'novel' }, 'toon', 0, 'soon', 1, false, '그림 실력이 부족해도 입시 준비가 가능한가요?', '둘 다 비슷'),
       mk('예시취준생', 'QR_로비', 'adult', 'adult', { 1: 'toon', 2: 'novel', 3: 'plan', 4: 'dev', 5: 'dev', 6: 'model', 7: 'plan', 8: 'dev', 9: 'model' }, 'dev', 1, 'soon', 2, false, '전공자가 아니어도 프로그래머 취업이 되나요?', '프로그래밍'),
       mk('예시빠른응답', 'direct', 'teen', 'teen', { 1: 'art', 2: 'novel', 3: 'plan', 4: 'dev', 5: 'model', 6: 'art', 7: 'plan', 8: 'toon', 9: 'novel' }, 'unsure', 0, 'explore', 0, true, '', '')
     ];
