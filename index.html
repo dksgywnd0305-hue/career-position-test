@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제작 포지션 테스트</title>
+<meta name="description" content="게임·웹툰·웹소설 제작, 나는 어떤 포지션일까? 2분 진로탐색 & 준비도 체크">
+<meta property="og:title" content="나는 게임·웹툰 제작에서 어떤 포지션일까?">
+<meta property="og:description" content="15번 터치, 2분이면 내 작업 스타일과 첫 준비 과제가 나와요.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root {
+    --bg: #0E1020; --bg2: #171A33; --card: #1E2242; --line: #2D3260;
+    --text: #F3F4FF; --sub: #A8ACD6; --dim: #6E73A3;
+    --accent: #FFD24A; --accent-ink: #1B1400; --ok: #4ADE80; --err: #FF6B6B;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    line-height: 1.55; word-break: keep-all; overflow-wrap: anywhere;
+    min-height: 100dvh;
+    background: radial-gradient(1200px 600px at 50% -200px, #2A2470 0%, transparent 60%), var(--bg);
+  }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px calc(32px + env(safe-area-inset-bottom)); min-height: 100dvh; display: flex; flex-direction: column; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .brand { font-size: 13px; color: var(--sub); letter-spacing: .02em; display: flex; align-items: center; gap: 8px; }
+  .brand::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); transform: rotate(45deg); }
+  .testmode { margin-top: 8px; font-size: 12px; color: var(--accent); border: 1px dashed var(--accent); border-radius: 10px; padding: 6px 10px; }
+
+  /* intro */
+  .intro { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
+  .intro h1 { font-size: clamp(30px, 8.5vw, 40px); line-height: 1.22; margin: 16px 0 14px; letter-spacing: -0.02em; }
+  .intro h1 em { font-style: normal; color: var(--accent); }
+  .intro p.lead { color: var(--sub); margin: 0 0 24px; font-size: 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+  .chip { font-size: 13px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--sub); }
+  .chip b { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .meta { display: flex; gap: 16px; color: var(--sub); font-size: 14px; margin-bottom: 20px; }
+  .meta span b { color: var(--text); }
+  .btn { display: block; width: 100%; text-align: center; padding: 17px 20px; border-radius: 14px; font-weight: 700; font-size: 17px; text-decoration: none; transition: transform .12s ease, filter .12s; }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-ghost { border: 1px solid var(--line); color: var(--text); background: transparent; }
+  .btn + .btn { margin-top: 10px; }
+  .btn[disabled] { opacity: .45; pointer-events: none; }
+  .fine { font-size: 12px; color: var(--dim); margin-top: 18px; }
+
+  /* question */
+  .qtop { display: flex; align-items: center; gap: 12px; margin: 6px 0 22px; }
+  .back { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); display: grid; place-items: center; flex: none; }
+  .back[hidden] { visibility: hidden; display: grid; }
+  .progress { flex: 1; height: 8px; border-radius: 99px; background: var(--bg2); overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
+  .count { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+  .qwrap { flex: 1; display: flex; flex-direction: column; animation: in .28s ease both; }
+  @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .qsection { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+  .qwrap h2 { font-size: 23px; line-height: 1.38; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .qhint { color: var(--sub); font-size: 15px; margin: 0 0 22px; }
+  .opts { display: flex; flex-direction: column; gap: 12px; }
+  .opt { text-align: left; width: 100%; padding: 18px 18px; border-radius: var(--radius); background: var(--card); border: 2px solid transparent; font-size: 17px; line-height: 1.45; display: flex; gap: 14px; align-items: center; transition: border-color .15s, background .15s, transform .12s; }
+  .opt:hover { border-color: var(--line); }
+  .opt:active { transform: scale(.985); }
+  .opt.sel { border-color: var(--accent); background: #2A2C4E; }
+  .opt .k { flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--bg2); color: var(--sub); font-size: 14px; font-weight: 700; display: grid; place-items: center; }
+  .opt.sel .k { background: var(--accent); color: var(--accent-ink); }
+  .pair .opt { min-height: 112px; font-size: 18px; font-weight: 600; }
+  .vs { text-align: center; font-size: 13px; font-weight: 800; color: var(--dim); letter-spacing: .1em; margin: -4px 0; }
+  .opts.small .opt { padding: 15px 16px; font-size: 16px; }
+
+  /* result */
+  .r-head { margin: 8px 0 18px; }
+  .r-kicker { font-size: 13px; color: var(--sub); }
+  .hero { border-radius: 22px; padding: 22px 20px 20px; position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--line); }
+  .hero::after { content: ''; position: absolute; right: -60px; top: -60px; width: 200px; height: 200px; border-radius: 50%; background: var(--c); opacity: .22; filter: blur(10px); }
+  .hero .lbl { font-size: 13px; color: var(--sub); }
+  .hero .type { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin: 2px 0 2px; color: var(--c); }
+  .hero .dom { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+  .hero p { margin: 0; color: var(--sub); font-size: 15px; position: relative; z-index: 1; }
+  .bars { margin-top: 18px; display: grid; gap: 8px; position: relative; z-index: 1; }
+  .bar { display: grid; grid-template-columns: 92px 1fr 22px; gap: 10px; align-items: center; font-size: 13px; }
+  .bar .t { color: var(--sub); white-space: nowrap; }
+  .bar .track { height: 10px; border-radius: 99px; background: var(--bg2); overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 99px; width: 0; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .bar .n { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .note { font-size: 12px; color: var(--dim); margin-top: 10px; position: relative; z-index: 1; }
+
+  .sec { margin-top: 26px; }
+  .sec h3 { font-size: 18px; margin: 0 0 12px; letter-spacing: -0.01em; }
+  .sec h3 small { font-size: 13px; color: var(--sub); font-weight: 500; margin-left: 6px; }
+  .box { background: var(--card); border-radius: var(--radius); padding: 18px; border: 1px solid var(--line); }
+  .box + .box { margin-top: 10px; }
+  .dhead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .rankno { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #0E1020; flex: none; }
+  .dname { font-weight: 700; font-size: 17px; }
+  .box p { margin: 0; color: var(--sub); font-size: 15px; }
+  .ev { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+  .ev li { font-size: 14px; display: flex; gap: 8px; }
+  .ev li span { flex: none; font-size: 12px; color: var(--dim); background: var(--bg2); border-radius: 6px; padding: 1px 7px; height: fit-content; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .compare { border-left: 4px solid var(--accent); }
+  .summary { display: grid; gap: 0; }
+  .summary div { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .summary div:first-child { border-top: 0; padding-top: 0; }
+  .summary dt { color: var(--sub); font-size: 14px; }
+  .summary dd { margin: 0; }
+  .lvl { display: flex; gap: 6px; margin-bottom: 12px; }
+  .lvl span { flex: 1; text-align: center; padding: 8px 4px; border-radius: 10px; background: var(--bg2); font-size: 13px; color: var(--dim); font-weight: 600; }
+  .lvl span.on { background: var(--accent); color: var(--accent-ink); }
+  .unk { margin: 0; padding-left: 18px; color: var(--sub); font-size: 15px; display: grid; gap: 8px; }
+
+  .cta { margin-top: 28px; border-radius: 22px; padding: 22px 20px; background: linear-gradient(160deg, #2C2580, #1E2242 70%); border: 1px solid #4A43B5; }
+  .cta h3 { margin: 0 0 6px; font-size: 20px; }
+  .cta p { margin: 0 0 14px; color: var(--sub); font-size: 15px; }
+  .cta ul { margin: 0 0 18px; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .cta li { font-size: 15px; display: flex; gap: 10px; }
+  .cta li::before { content: ''; flex: none; width: 18px; height: 18px; margin-top: 3px; border-radius: 6px; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231B1400' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/12px no-repeat; }
+  .linkbox { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; color: var(--text); }
+  .linkbox span { color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .row2 .btn { margin: 0; font-size: 15px; padding: 14px 10px; }
+
+  /* form */
+  .field { margin-bottom: 16px; }
+  .field label.l { display: block; font-size: 14px; font-weight: 600; margin-bottom: 7px; }
+  .field label.l small { color: var(--dim); font-weight: 400; }
+  input[type=text], input[type=tel], textarea, select { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; }
+  textarea { resize: vertical; min-height: 76px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 15px; background: var(--bg2); }
+  .seg button.sel { border-color: var(--accent); background: #2A2C4E; color: var(--accent); font-weight: 600; }
+  .consent { background: var(--bg2); border-radius: 12px; padding: 14px; margin-bottom: 10px; font-size: 14px; }
+  .consent label { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+  .consent input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+  .consent details { margin-top: 8px; color: var(--sub); font-size: 13px; }
+  .consent summary { cursor: pointer; color: var(--dim); }
+  .consent table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .consent th, .consent td { text-align: left; padding: 6px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+  .consent th { width: 72px; color: var(--dim); font-weight: 500; }
+  .err { color: var(--err); font-size: 14px; margin: 6px 0 12px; min-height: 1em; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .done { flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+  .done .ic { width: 72px; height: 72px; border-radius: 50%; background: var(--ok); display: grid; place-items: center; margin: 0 auto 18px; }
+  .done h2 { margin: 0 0 8px; font-size: 24px; }
+  .done p { color: var(--sub); margin: 0 0 24px; }
+  .kidbox { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .kidbox p { color: var(--sub); margin: 0 0 14px; font-size: 15px; }
+  footer.disc { margin-top: 30px; font-size: 12px; color: var(--dim); line-height: 1.6; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: #fff; color: #111; padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; transition: .25s; pointer-events: none; z-index: 9; }
+  .toast.on { opacity: 1; transform: translateX(-50%); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script>
+(function () {
+  const E = window.ENGINE, C = window.CONFIG;
+  const $app = document.getElementById('app');
+  const params = new URLSearchParams(location.search);
+  const SRC = (params.get('src') || 'direct').slice(0, 40);
+  const KIOSK = params.get('kiosk') === '1';
+  const TEST_MODE = !C.apiUrl;
+
+  let S, idleTimer = null;
+  function fresh() {
+    return {
+      sid: Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
+      step: 0, startedAt: null, shown: 0,
+      order: {},                      // 문항별 좌우 섞기
+      ans: { age: null, track: null, curious: null, picks: {}, q10: null, exp: null, goal: null, time: null, times: {} },
+      result: null, logged: { start: false, complete: false }
+    };
+  }
+
+  // ---- 단계 정의: 시작 2 + 취향 10 + 상태 3 = 15 ----
+  const STEPS = [
+    { kind: 'age' }, { kind: 'curious' },
+    ...E.PAIRS.map(p => ({ kind: 'pair', p })),
+    { kind: 'q10' },
+    ...E.STATE_QS.map(q => ({ kind: 'state', q }))
+  ];
+  const TOTAL = STEPS.length;
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const brandHtml = () => `<div class="brand">${esc(C.brand)}</div>${TEST_MODE ? '<div class="testmode">테스트 모드 — config.js에 apiUrl이 없어 응답이 저장되지 않습니다.</div>' : ''}`;
+  function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); }
+
+  async function api(payload) {
+    if (TEST_MODE) { console.info('[테스트 모드] 전송 생략', payload); return { ok: true, test: true }; }
+    const res = await fetch(C.apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+    return res.json();
+  }
+  function logEvent(ev) {
+    if (S.logged[ev]) return; S.logged[ev] = true;
+    const r = S.result;
+    api({ action: 'log', event: ev, sid: S.sid, src: SRC, age: S.ans.age, track: S.ans.track,
+      top1: r ? r.top1 : '', top2: r ? r.top2 : '', level: r ? r.level : '', flags: r ? r.flags.join(',') : '',
+      sec: S.startedAt ? Math.round((Date.now() - S.startedAt) / 1000) : '',
+      answers: ev === 'complete' ? compactAnswers() : '' }).catch(() => {});
+  }
+  function compactAnswers() {
+    const a = S.ans;
+    return [1,2,3,4,5,6,7,8,9].map(i => a.picks[i] || '-').join(',') + '|' + a.q10 + '|exp' + a.exp + '|' + a.goal + '|time' + a.time;
+  }
+
+  // ---- 키오스크: 방치 시 처음으로 ----
+  function armIdle(sec) {
+    clearTimeout(idleTimer);
+    if (!KIOSK) return;
+    idleTimer = setTimeout(() => { S = fresh(); renderIntro(); }, (sec || C.kioskResetSec) * 1000);
+  }
+  ['pointerdown', 'keydown', 'scroll'].forEach(ev => window.addEventListener(ev, () => { if (KIOSK && S && (S.step > 0 || S.result)) armIdle(); }, { passive: true }));
+
+  // ================= 화면: 시작 =================
+  function renderIntro() {
+    clearTimeout(idleTimer);
+    window.scrollTo(0, 0);
+    const chips = E.ORDER.map(d => `<span class="chip"><b style="background:${E.DOMAINS[d].color}"></b>${E.DOMAINS[d].name}</span>`).join('');
+    $app.innerHTML = `
+      ${brandHtml()}
+      <section class="intro">
+        <h1>게임·웹툰 제작,<br>나는 <em>어떤 포지션</em>일까?</h1>
+        <p class="lead">실제 작업 장면 중 더 해 보고 싶은 쪽을 고르면, 내 작업 스타일과 지금 할 수 있는 첫 준비 과제를 알려 드려요.</p>
+        <div class="chips">${chips}</div>
+        <div class="meta"><span>⏱ 약 <b>2분</b></span><span>👆 <b>15번</b> 터치</span><span>🔓 연락처 없이 결과 확인</span></div>
+        <button class="btn btn-primary" id="go">시작하기</button>
+        <p class="fine">이 테스트는 게임·웹툰·웹소설 분야의 관심 활동과 준비 상태를 정리하는 자체 진로탐색 도구예요. 표준화된 심리검사나 능력·합격 가능성 판정이 아니며, 결과는 상담과 체험의 참고자료로 쓰입니다. 응답은 이름·연락처 없이 익명 통계로만 저장돼요.</p>
+      </section>`;
+    document.getElementById('go').onclick = () => { S.startedAt = Date.now(); S.step = 1; logEvent('start'); renderStep(); };
+  }
+
+  // ================= 화면: 문항 =================
+  function renderStep() {
+    if (S.step > TOTAL) return finish();
+    window.scrollTo(0, 0);
+    const st = STEPS[S.step - 1];
+    const a = S.ans;
+    let section = '', title = '', hint = '', body = '';
+    const idx = S.step;
+
+    if (st.kind === 'age') {
+      section = '시작 질문'; title = '지금 나에게 해당하는 것은?'; hint = '나이에 맞춰 결과와 다음 단계를 안내해 드려요.';
+      body = optList(E.AGE.map(o => ({ v: o.v, label: o.label })), a.age, 'small');
+    } else if (st.kind === 'curious') {
+      section = '시작 질문'; title = '오늘 가장 알고 싶은 건 뭔가요?'; hint = '결과 화면에서 이 질문에 맞춰 정리해 드려요.';
+      body = optList(E.CURIOUS[a.track || 'teen'], a.curious, 'small');
+    } else if (st.kind === 'pair') {
+      const p = st.p;
+      if (!S.order[p.id]) S.order[p.id] = Math.random() < 0.5 ? ['a', 'b'] : ['b', 'a'];
+      const [x, y] = S.order[p.id];
+      section = `취향 질문 ${p.id} / 10`; title = p.prompt; hint = p.grind ? '둘 다 쉽지 않아요. 그래도 덜 지칠 것 같은 쪽은?' : '둘 중 더 해 보고 싶은 작업은?';
+      const cur = a.picks[p.id];
+      body = `<div class="opts pair">
+        ${optBtn(p[x].d, p[x].text, cur === p[x].d, 'A')}
+        <div class="vs">VS</div>
+        ${optBtn(p[y].d, p[y].text, cur === p[y].d, 'B')}</div>`;
+    } else if (st.kind === 'q10') {
+      section = '취향 질문 10 / 10'; title = E.Q10.prompt; hint = '하나만 고르세요.';
+      body = optList(E.Q10.options.map(o => ({ v: o.d, label: o.text })), a.q10, 'small');
+    } else if (st.kind === 'state') {
+      const q = st.q;
+      const opts = Array.isArray(q.options) ? q.options : q.options[a.track || 'teen'];
+      section = '지금 나의 상태'; title = q.prompt; hint = '정답은 없어요. 지금 모습 그대로 골라 주세요.';
+      body = optList(opts, a[q.key], 'small');
+    }
+
+    $app.innerHTML = `
+      <div class="qtop">
+        <button class="back" id="back" aria-label="이전 문항" ${idx === 1 ? 'hidden' : ''}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${TOTAL}" aria-valuenow="${idx - 1}"><i style="width:${((idx - 1) / TOTAL) * 100}%"></i></div>
+        <div class="count">${idx} / ${TOTAL}</div>
+      </div>
+      <div class="qwrap">
+        <div class="qsection">${section}</div>
+        <h2>${esc(title)}</h2>
+        <p class="qhint">${esc(hint)}</p>
+        ${body}
+      </div>`;
+    S.shown = performance.now();
+    document.getElementById('back').onclick = () => { if (S.step > 1) { S.step--; renderStep(); } };
+    $app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => choose(st, btn.dataset.v, btn));
+  }
+  function optBtn(v, label, sel, k) {
+    return `<button class="opt${sel ? ' sel' : ''}" data-v="${esc(v)}"><span class="k">${k}</span><span>${esc(label)}</span></button>`;
+  }
+  function optList(opts, cur, cls) {
+    return `<div class="opts ${cls || ''}">${opts.map((o, i) => optBtn(o.v, o.label, String(cur) === String(o.v), String.fromCharCode(65 + i))).join('')}</div>`;
+  }
+
+  let locking = false;
+  function choose(st, raw, btn) {
+    if (locking) return;
+    locking = true;
+    const a = S.ans, ms = Math.round(performance.now() - S.shown);
+    if (st.kind === 'age') {
+      const o = E.AGE.find(x => x.v === raw);
+      if (a.track && a.track !== o.track) { a.curious = null; a.goal = null; }
+      a.age = o.v; a.track = o.track;
+    } else if (st.kind === 'curious') a.curious = raw;
+    else if (st.kind === 'pair') { a.picks[st.p.id] = raw; a.times[st.p.id] = ms; }
+    else if (st.kind === 'q10') { a.q10 = raw; a.times[10] = ms; }
+    else if (st.kind === 'state') { a[st.q.key] = st.q.key === 'goal' ? raw : Number(raw); }
+    $app.querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', b === btn));
+    setTimeout(() => { locking = false; S.step++; renderStep(); }, 230);
+  }
+
+  // ================= 화면: 결과 =================
+  function finish() {
+    S.result = E.compute(S.ans);
+    logEvent('complete');
+    renderResult();
+  }
+
+  function renderResult() {
+    window.scrollTo(0, 0);
+    const a = S.ans, r = S.result, D = E.DOMAINS;
+    const d1 = D[r.top1], d2 = D[r.top2];
+    const max = 4;
+    const bars = r.rank.map(d => `
+      <div class="bar"><span class="t">${D[d].name}</span>
+        <div class="track"><div class="fill" data-w="${(r.scores[d] / max) * 100}" style="background:${D[d].color}"></div></div>
+        <span class="n">${r.scores[d]}</span></div>`).join('');
+    const evHtml = d => {
+      const ev = r.evidence[d];
+      if (!ev.length) return '<ul class="ev"><li><span>참고</span>다른 분야와 비교했을 때 상대적으로 덜 밀린 분야예요.</li></ul>';
+      return `<ul class="ev">${ev.map(e => `<li><span>${e.q}번</span>${esc(e.text)}</li>`).join('')}</ul>`;
+    };
+    const lv = E.LEVELS[r.level];
+    const expLabel = E.STATE_QS[0].options.find(o => o.v === a.exp).label;
+    const goalLabel = E.STATE_QS[1].options[a.track].find(o => o.v === a.goal).label;
+    const timeLabel = E.STATE_QS[2].options.find(o => o.v === a.time).label;
+    const framing = a.track === 'adult'
+      ? '관심 직무와 지금의 준비 상태는 따로 봐야 해요. 관심이 높아도 준비 단계에 따라 첫 과제가 달라집니다.'
+      : '지금은 직업을 정하기보다, 먼저 해 볼 활동을 고르는 단계예요. 직접 해 보면 결과가 더 선명해져요.';
+    const curiousLabel = (E.CURIOUS[a.track].find(o => o.v === a.curious) || {}).label || '';
+    const links = [r.top1, r.top2].filter(d => C.links && C.links[d])
+      .map(d => `<a class="box linkbox" href="${esc(C.links[d])}" target="_blank" rel="noopener">${D[d].name} 작업 과정 미리 체험하기<span>열기 →</span></a>`).join('');
+    const isKid = a.age === 'u14';
+
+    $app.innerHTML = `
+      ${brandHtml()}
+      <div class="r-head"><div class="r-kicker">이번 응답에서 상대적으로 관심이 높게 나타난 작업 스타일</div></div>
+
+      <section class="hero" style="--c:${d1.color}">
+        <div class="lbl">나의 제작 작업 스타일</div>
+        <div class="type">${d1.type}</div>
+        <div class="dom">${d1.name} 쪽 작업에 가장 끌려요</div>
+        <p>${d1.desc}</p>
+        <div class="bars">${bars}</div>
+        <div class="note">막대는 이번 응답에서의 상대적 관심도예요(최대 4). 실력이나 합격 가능성을 뜻하지 않아요.</div>
+      </section>
+
+      <section class="sec">
+        <h3>먼저 탐색해 볼 분야 2개</h3>
+        <div class="box">
+          <div class="dhead"><span class="rankno" style="background:${d1.color}">1</span><span class="dname">${d1.name}</span></div>
+          <p>${d1.job}</p>${evHtml(r.top1)}
+        </div>
+        <div class="box">
+          <div class="dhead"><span class="rankno" style="background:${d2.color}">2</span><span class="dname">${d2.name}</span></div>
+          <p>${d2.job}</p>${evHtml(r.top2)}
+        </div>
+        <div class="box compare"><p>${E.PAIR_TEXT[E.pairKey(r.top1, r.top2)]}</p></div>
+      </section>
+
+      <section class="sec">
+        <h3>한 줄 정리</h3>
+        <div class="box">
+          <dl class="summary">
+            <div><dt>관심 분야</dt><dd>${d1.name} 우선, ${d2.name} 함께 탐색</dd></div>
+            <div><dt>경험</dt><dd>${esc(expLabel)}</dd></div>
+            <div><dt>목표</dt><dd>${esc(goalLabel)} · 주 ${esc(timeLabel)}</dd></div>
+            <div><dt>알고 싶은 것</dt><dd>${esc(curiousLabel)}</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h3>지금 준비 상태 <small>${lv.name}</small></h3>
+        <div class="box">
+          <div class="lvl">${['explore', 'basic', 'pro'].map(k => `<span class="${k === r.level ? 'on' : ''}">${E.LEVELS[k].name}</span>`).join('')}</div>
+          <p>${lv.desc} ${framing}</p>
+        </div>
+        <div class="box" style="border-color:${d1.color}">
+          <div class="dhead"><span class="dname">이번 주 첫 실행 과제</span></div>
+          <p style="color:var(--text);font-size:16px">${d1.task[r.level]}</p>
+        </div>
+        ${links}
+      </section>
+
+      <section class="sec">
+        <h3>이 결과로는 아직 모르는 것</h3>
+        <div class="box"><ul class="unk">${E.unknowns(r, a).map(u => `<li>${esc(u)}</li>`).join('')}</ul></div>
+      </section>
+
+      <section class="cta">
+        <h3>여기서부터는 상담에서 확인해요</h3>
+        <p>${d1.name}와(과) ${d2.name} 중 어느 쪽이 더 맞는지는 이 결과만으로 정할 수 없어요. 상담에서는 결과를 바탕으로 <b>1장짜리 해석지</b>를 함께 만들어 드려요.</p>
+        <ul>
+          <li>${d1.name} · ${d2.name}의 실제 작업 비교</li>
+          <li>지금 ${lv.name}에 맞는 준비 경로</li>
+          <li>4주 동안 해 볼 첫 과제 계획</li>
+          ${curiousLabel ? `<li>‘${esc(curiousLabel)}’에 대한 답</li>` : ''}
+        </ul>
+        ${isKid ? kidBlock() : '<button class="btn btn-primary" id="apply">결과 해석 상담 신청하기</button>'}
+      </section>
+
+      <div class="row2">
+        ${KIOSK ? '' : '<button class="btn btn-ghost" id="saveimg">결과 이미지 저장</button><button class="btn btn-ghost" id="share">친구에게 공유</button>'}
+      </div>
+      <button class="btn btn-ghost" id="restart" style="margin-top:10px">처음부터 다시 하기</button>
+
+      <footer class="disc">본 도구는 게임·웹툰·웹소설 분야의 관심 활동과 준비 상태를 정리하기 위한 자체 진로탐색 도구입니다. 표준화된 심리검사나 능력·취업 가능성 판정을 대신하지 않으며, 결과는 상담과 체험을 위한 참고자료로 활용됩니다.</footer>`;
+
+    requestAnimationFrame(() => setTimeout(() => $app.querySelectorAll('.fill').forEach(f => f.style.width = f.dataset.w + '%'), 60));
+    const ap = document.getElementById('apply'); if (ap) ap.onclick = renderApply;
+    document.getElementById('restart').onclick = () => { S = fresh(); renderIntro(); };
+    const si = document.getElementById('saveimg'); if (si) si.onclick = saveImage;
+    const sh = document.getElementById('share'); if (sh) sh.onclick = shareLink;
+    armIdle();
+  }
+
+  function kidBlock() {
+    return `<div class="kidbox"><p>만 14세 미만은 <b>보호자와 함께</b> 상담을 신청해 주세요. 이 화면을 보호자께 보여 드리거나, 결과 이미지를 저장해 전해 드리면 돼요.</p>
+      ${C.phone ? `<a class="btn btn-primary" href="tel:${esc(C.phone.replace(/[^0-9+]/g, ''))}">보호자와 전화 상담 (${esc(C.phone)})</a>` : '<p style="margin:0">학원에 방문하시거나 전화로 문의해 주세요.</p>'}</div>`;
+  }
+
+  // ================= 화면: 상담 신청 =================
+  function renderApply() {
+    window.scrollTo(0, 0);
+    const D = E.DOMAINS, r = S.result;
+    const feel = [
+      { v: 'top1', label: D[r.top1].name }, { v: 'top2', label: D[r.top2].name },
+      { v: 'both', label: '둘 다 비슷해요' }, { v: 'none', label: '둘 다 아닌 것 같아요' }
+    ];
+    const times = ['평일 오후', '평일 저녁', '주말', '언제든 괜찮아요'];
+    $app.innerHTML = `
+      ${brandHtml()}
+      <div class="qtop"><button class="back" id="back" aria-label="결과로 돌아가기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div style="font-weight:700">결과 해석 상담 신청</div></div>
+      <p style="color:var(--sub);margin:0 0 20px;font-size:15px">상담 선생님이 결과를 미리 보고, 질문을 준비해서 연락드려요.</p>
+      <form id="f" novalidate>
+        <div class="field"><label class="l" for="nm">이름</label><input type="text" id="nm" maxlength="20" autocomplete="name" required></div>
+        <div class="field"><label class="l" for="ph">연락처</label><input type="tel" id="ph" maxlength="13" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000" required></div>
+        <div class="field"><span class="l" style="display:block;font-size:14px;font-weight:600;margin-bottom:7px">연락받기 편한 시간</span><div class="seg" data-k="when">${times.map(t => `<button type="button" data-v="${t}">${t}</button>`).join('')}</div></div>
+        <div class="field"><span class="l" style="display:block;font-size:14px;font-weight:600;margin-bottom:7px">결과 중 더 와닿은 분야는?</span><div class="seg" data-k="feel">${feel.map(o => `<button type="button" data-v="${o.v}">${o.label}</button>`).join('')}</div></div>
+        <div class="field"><label class="l" for="qq">상담에서 꼭 묻고 싶은 질문 <small>(선택)</small></label><textarea id="qq" maxlength="100" placeholder="예: 그림 실력이 부족해도 시작할 수 있나요?"></textarea></div>
+        <div class="hp" aria-hidden="true"><label>회사<input type="text" id="company" tabindex="-1" autocomplete="off"></label></div>
+        <div class="consent">
+          <label><input type="checkbox" id="c1"> [필수] 상담 연락을 위한 개인정보 수집·이용에 동의합니다</label>
+          <details><summary>자세히 보기</summary>
+            <table>
+              <tr><th>수집 항목</th><td>이름, 연락처, 연락 희망 시간, 테스트 응답 내용, 유입 경로</td></tr>
+              <tr><th>이용 목적</th><td>진로 상담 연락 및 상담 진행</td></tr>
+              <tr><th>보유 기간</th><td>${esc(C.retention)}</td></tr>
+              <tr><th>거부 권리</th><td>동의하지 않을 수 있으며, 이 경우 상담 신청만 제한되고 결과 확인은 그대로 가능합니다.</td></tr>
+            </table>
+          </details>
+        </div>
+        <div class="consent">
+          <label><input type="checkbox" id="c2"> [선택] 설명회·체험 수업 등 소식을 문자로 받겠습니다</label>
+          <details><summary>자세히 보기</summary><p style="margin:8px 0 0">연락처로 행사·과정 안내 문자를 보냅니다. 동의하지 않아도 상담 신청에는 영향이 없으며, 언제든 수신을 거부할 수 있습니다.</p></details>
+        </div>
+        <div class="err" id="err"></div>
+        <button class="btn btn-primary" type="submit" id="sub">상담 신청하기</button>
+      </form>`;
+    const sel = {};
+    $app.querySelectorAll('.seg').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+      g.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); sel[g.dataset.k] = b.dataset.v;
+    }));
+    const ph = document.getElementById('ph');
+    ph.addEventListener('input', () => {
+      const n = ph.value.replace(/\D/g, '').slice(0, 11);
+      ph.value = n.length < 4 ? n : n.length < 8 ? `${n.slice(0, 3)}-${n.slice(3)}` : `${n.slice(0, 3)}-${n.slice(3, n.length - 4)}-${n.slice(-4)}`;
+    });
+    document.getElementById('back').onclick = renderResult;
+    document.getElementById('f').onsubmit = async ev => {
+      ev.preventDefault();
+      const err = document.getElementById('err');
+      const name = document.getElementById('nm').value.trim();
+      const phone = ph.value.replace(/\D/g, '');
+      if (name.length < 2) return err.textContent = '이름을 입력해 주세요.';
+      if (!/^01[016789]\d{7,8}$/.test(phone)) return err.textContent = '휴대폰 번호를 정확히 입력해 주세요.';
+      if (!document.getElementById('c1').checked) return err.textContent = '상담 연락을 위해 필수 동의가 필요해요.';
+      err.textContent = '';
+      const btn = document.getElementById('sub'); btn.disabled = true; btn.textContent = '보내는 중…';
+      const r = S.result, a = S.ans;
+      try {
+        const res = await api({
+          action: 'apply', sid: S.sid, src: SRC, company: document.getElementById('company').value,
+          name, phone, when: sel.when || '', feel: sel.feel || '', question: document.getElementById('qq').value.trim(),
+          marketing: document.getElementById('c2').checked,
+          age: a.age, track: a.track, curious: a.curious,
+          top1: r.top1, top2: r.top2, level: r.level, flags: r.flags.join(','),
+          scores: r.scores,
+          detail: { ans: a, result: { scores: r.scores, rank: r.rank, flags: r.flags, level: r.level, avgMs: r.avgMs, grindQ: r.grindQ } }
+        });
+        if (!res || !res.ok) throw new Error((res && res.error) || '저장 실패');
+        renderDone(res.test);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = '상담 신청하기';
+        err.textContent = '전송에 실패했어요. 잠시 후 다시 시도하거나 학원으로 연락해 주세요.' + (C.phone ? ` (${C.phone})` : '');
+      }
+    };
+  }
+
+  function renderDone(isTest) {
+    window.scrollTo(0, 0);
+    $app.innerHTML = `
+      ${brandHtml()}
+      <section class="done">
+        <div class="ic"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0E1020" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+        <h2>상담 신청이 접수됐어요</h2>
+        <p>상담 선생님이 결과를 미리 확인하고 연락드릴게요.<br>그 전에 <b>첫 실행 과제</b>를 해 보면 상담이 훨씬 구체적이 돼요.${isTest ? '<br><small style="color:var(--accent)">(테스트 모드라 실제로 저장되지는 않았습니다)</small>' : ''}</p>
+        <button class="btn btn-ghost" id="toResult">내 결과 다시 보기</button>
+        <button class="btn btn-ghost" id="restart">처음으로</button>
+      </section>`;
+    document.getElementById('toResult').onclick = renderResult;
+    document.getElementById('restart').onclick = () => { S = fresh(); renderIntro(); };
+    armIdle(KIOSK ? 20 : 0);
+  }
+
+  // ================= 공유 =================
+  function shareUrl() {
+    const u = new URL(location.href); u.search = ''; u.searchParams.set('src', 'share'); return u.toString();
+  }
+  async function shareLink() {
+    const d = E.DOMAINS[S.result.top1];
+    const text = `나는 게임·웹툰 제작에서 '${d.type}'(${d.name})이래! 너는 어떤 포지션이야?`;
+    if (navigator.share) { try { await navigator.share({ title: '제작 포지션 테스트', text, url: shareUrl() }); } catch (e) {} return; }
+    try { await navigator.clipboard.writeText(text + ' ' + shareUrl()); toast('링크를 복사했어요'); } catch (e) { prompt('아래 링크를 복사하세요', shareUrl()); }
+  }
+
+  async function saveImage() {
+    try { await document.fonts.ready; } catch (e) {}
+    const r = S.result, D = E.DOMAINS, d = D[r.top1];
+    const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    const F = "'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+    g.fillStyle = '#0E1020'; g.fillRect(0, 0, W, H);
+    const grd = g.createRadialGradient(W * 0.85, 120, 20, W * 0.85, 120, 640); grd.addColorStop(0, d.color + '88'); grd.addColorStop(1, '#0E102000');
+    g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#A8ACD6'; g.font = `500 36px ${F}`; g.fillText('나의 제작 작업 스타일', 90, 190);
+    let fs = 112; g.font = `800 ${fs}px ${F}`;
+    while (g.measureText(d.type).width > W - 170 && fs > 60) { fs -= 4; g.font = `800 ${fs}px ${F}`; }
+    g.fillStyle = d.color; g.fillText(d.type, 84, 330);
+    g.fillStyle = '#F3F4FF'; g.font = `700 44px ${F}`; g.fillText(`${d.name} 쪽 작업에 가장 끌려요`, 90, 410);
+    g.fillStyle = '#A8ACD6'; g.font = `400 34px ${F}`;
+    wrap(g, d.desc, 90, 490, W - 180, 52);
+    let y = 700;
+    r.rank.forEach(k => {
+      g.fillStyle = '#A8ACD6'; g.font = `500 32px ${F}`; g.fillText(D[k].name, 90, y + 26);
+      round(g, 360, y, 560, 26, 13, '#1E2242');
+      if (r.scores[k] > 0) round(g, 360, y, 560 * (r.scores[k] / 4), 26, 13, D[k].color);
+      y += 72;
+    });
+    g.fillStyle = '#F3F4FF'; g.font = `700 34px ${F}`; g.fillText(`함께 탐색: ${D[r.top2].name}`, 90, 1180);
+    g.fillStyle = '#6E73A3'; g.font = `400 26px ${F}`;
+    g.fillText('응답 기반 관심도 탐색 결과이며 능력·합격 판정이 아닙니다.', 90, 1240);
+    g.fillText(C.brand + ' · 제작 포지션 테스트', 90, 1282);
+    cv.toBlob(async blob => {
+      const file = new File([blob], '제작포지션_결과.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: '제작 포지션 테스트' }); return; } catch (e) {} }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast('이미지를 저장했어요');
+    }, 'image/png');
+  }
+  function wrap(g, text, x, y, maxW, lh) {
+    let line = '';
+    for (const ch of text) { const t = line + ch; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); line = ch; y += lh; } else line = t; }
+    if (line) g.fillText(line, x, y);
+  }
+  function round(g, x, y, w, h, rr, c) {
+    rr = Math.min(rr, w / 2); g.fillStyle = c; g.beginPath(); g.moveTo(x + rr, y); g.arcTo(x + w, y, x + w, y + h, rr); g.arcTo(x + w, y + h, x, y + h, rr); g.arcTo(x, y + h, x, y, rr); g.arcTo(x, y, x + w, y, rr); g.closePath(); g.fill();
+  }
+
+  S = fresh();
+  renderIntro();
+})();
+</script>
+</body>
+</html>
