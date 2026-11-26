@@ -24,8 +24,10 @@
 
 > 코드를 고친 뒤에는 `배포 > 배포 관리 > 수정(연필) > 버전: 새 버전`으로 다시 배포해야 반영됩니다. URL은 그대로입니다.
 
-## 2. 온라인에 올리기
-폴더째 GitHub Pages나 Netlify 같은 정적 호스팅에 올리면 됩니다(서버 불필요).
+## 2. 온라인 주소 (GitHub Pages 배포 완료)
+- 테스트: https://dksgywnd0305-hue.github.io/career-position-test/
+- 상담카드: https://dksgywnd0305-hue.github.io/career-position-test/상담카드.html
+- 저장소: https://github.com/dksgywnd0305-hue/career-position-test (이 폴더를 고친 뒤 main에 push하면 1~2분 뒤 반영)
 - `상담카드.html`도 같이 올라가지만, 관리자 키가 없으면 데이터가 보이지 않습니다.
 - 테스트 링크만 알리고, 상담카드 주소는 내부에서만 공유하세요.
 
@@ -34,10 +36,10 @@
 
 | 용도 | 링크 예시 |
 |---|---|
-| 인스타 프로필 | `.../index.html?src=인스타` |
-| 블로그 글 | `.../index.html?src=블로그` |
-| 로비 QR 포스터 | `.../index.html?src=QR_로비` |
-| 학교 설명회 | `.../index.html?src=설명회_OO고` |
+| 인스타 프로필 | `https://dksgywnd0305-hue.github.io/career-position-test/?src=인스타` |
+| 블로그 글 | `https://dksgywnd0305-hue.github.io/career-position-test/?src=블로그` |
+| 로비 QR 포스터 | `https://dksgywnd0305-hue.github.io/career-position-test/?src=QR_로비` |
+| 학교 설명회 | `https://dksgywnd0305-hue.github.io/career-position-test/?src=설명회_OO고` |
 | 친구 공유(자동) | `?src=share` |
 
 **공용 태블릿**에서는 `?kiosk=1&src=태블릿`을 붙여 쓰세요. 결과 이미지 저장·공유 버튼이 숨겨지고, 90초 동안 아무도 안 만지면 처음 화면으로 돌아갑니다(이전 사람 응답이 남지 않음).
